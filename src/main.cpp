@@ -6,15 +6,19 @@
 
 #include "config.h"
 
+// LED Defines:
 #define LED_PIN    D4
         
-// How many NeoPixels are attached to the Arduino?
 #define LED_COUNT 9
 
 #define DELAY_TIME 10
 
 #define MIN_BRIGHTNESS 10
 #define MAX_BRIGHTNESS 225
+
+// WIFI Defines:
+#define WIFI_MAX_RETRIES 20
+
 
 CRGB leds[LED_COUNT];
 
@@ -94,21 +98,7 @@ bool randomWarmup(byte r, byte g, byte b, byte dl){
   return done;
 }
 
-
-void setup(){
-    FastLED.addLeds<WS2812, LED_PIN, GRB>(leds, LED_COUNT).setCorrection(TypicalLEDStrip);
-    setStrip(0, 0, 0);
-    update();
-
-    Serial.begin(115200);
-    wifiMulti.addAP(WIFI_SSID, WIFI_PASS);
-
-    Serial.println("Connecting ...");
-    int i = 0;
-    while (wifiMulti.run() != WL_CONNECTED) { // Wait for the Wi-Fi to connect
-        delay(250);
-        Serial.print('.');
-    }
+void initWIFI(){
     Serial.println('\n');
     Serial.print("Connected to ");
     Serial.println(WiFi.SSID());              // Tell us what network we're connected to
@@ -117,7 +107,6 @@ void setup(){
     
     ArduinoOTA.setHostname("ESP8266");
     ArduinoOTA.setPassword("esp8266");
-
     ArduinoOTA.onStart([]() {
         Serial.println("Start");
     });
@@ -137,6 +126,31 @@ void setup(){
     });
     ArduinoOTA.begin();
     Serial.println("OTA ready");
+}
+
+
+void setup(){
+    FastLED.addLeds<WS2812, LED_PIN, GRB>(leds, LED_COUNT).setCorrection(TypicalLEDStrip);
+    setStrip(0, 0, 0);
+    update();
+
+    Serial.begin(115200);
+    wifiMulti.addAP(WIFI_SSID, WIFI_PASS);
+
+    Serial.println("Connecting ...");
+    for(int i = 0; i < WIFI_MAX_RETRIES; ++i){
+        if(wifiMulti.run() == WL_CONNECTED){
+            initWIFI();
+            break;
+        }
+        delay(500);
+        Serial.print('.');
+    }
+    // while (wifiMulti.run() != WL_CONNECTED) { // Wait for the Wi-Fi to connect
+    //     delay(250);
+    //     Serial.print('.');
+    // }
+    
 
     // while(!randomWarmup(200, 10, 200, 10));
 
@@ -147,7 +161,9 @@ void setup(){
 
 bool warmup = false;
 void loop(){
-    ArduinoOTA.handle();
+    if(wifiMulti.run() == WL_CONNECTED){
+        ArduinoOTA.handle();
+    }
     // twinkle(160, 10, 160, 20, 0, 20, 100);
     leftshift(1);
     update();
