@@ -1,10 +1,10 @@
 #include <Arduino.h>
-#include <FastLED.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WiFiMulti.h>
 #include <ArduinoOTA.h>
 
 #include "config.h"
+#include "led_control.hpp"
 
 // LED Defines:
 #define LED_PIN    D4
@@ -19,84 +19,9 @@
 // WIFI Defines:
 #define WIFI_MAX_RETRIES 20
 
-
-CRGB leds[LED_COUNT];
+LEDStrip strip1(LED_COUNT, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
 
 ESP8266WiFiMulti wifiMulti;
-
-void setPixel(int pixel, byte red, byte green, byte blue){
-    leds[pixel].r = red;
-    leds[pixel].g = green;
-    leds[pixel].b = blue;
-}
-
-void setStrip(byte red, byte green, byte blue){
-    for(int i = 0; i < LED_COUNT; ++i){
-        setPixel(i, red, green, blue);
-    }
-}
-
-void update(){
-    FastLED.show();
-}
-
-
-//LED DISPLAY FUNCTIONS:
-void twinkle(byte r, byte g, byte b, float dr, float dg, float db, float dl){
-    for(int i = 0; i < LED_COUNT; ++i){
-        float dl_out = random(100-dl, 100)/100.0;
-        float dr_coef = random(-dr, dr)/100.0;
-        float dg_coef = random(-dg, dg)/100.0;
-        float db_coef = random(-db, db)/100.0;
-        byte r_out = constrain(r * (1 + dr_coef) * dl_out, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
-        byte g_out = constrain(g * (1 + dg_coef) * dl_out, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
-        byte b_out = constrain(b * (1 + db_coef) * dl_out, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
-        setPixel(i, r_out, g_out, b_out);
-
-    }
-}
-
-void leftshift(bool wrap){
-    CRGB temp = leds[LED_COUNT - 1];
-    for(int i = LED_COUNT - 1; i > 0; --i){
-        leds[i] = leds[i-1];
-    }
-    if(!wrap){
-        temp.r = 0;
-        temp.g = 0;
-        temp.b = 0;
-    }
-    leds[0] = temp;    
-}
-
-void rightshift(bool wrap){
-    CRGB temp = leds[0];
-    for(int i = 0; i < LED_COUNT; ++i){
-        leds[i] = leds[i+1];
-    }
-    if(!wrap){
-        temp.r = 0;
-        temp.g = 0;
-        temp.b = 0;
-    }
-    leds[LED_COUNT - 1] = temp;    
-}
-
-bool randomWarmup(byte r, byte g, byte b, byte dl){
-  bool done = true;
-  for(int i = 0; i < LED_COUNT; ++i){
-    if(leds[i].r != r || leds[i].g != g|| leds[i].b != b){
-      done = false;
-      byte incr = random(0, dl);
-      byte r_out = constrain(leds[i].r + incr, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
-      byte g_out = constrain(leds[i].g + incr, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
-      byte b_out = constrain(leds[i].b + incr, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
-      setPixel(i, r_out, g_out, b_out);
-    }
-  }
-  update();
-  return done;
-}
 
 void initWIFI(){
     Serial.println('\n');
@@ -130,10 +55,7 @@ void initWIFI(){
 
 
 void setup(){
-    FastLED.addLeds<WS2812, LED_PIN, GRB>(leds, LED_COUNT).setCorrection(TypicalLEDStrip);
-    setStrip(0, 0, 0);
-    update();
-
+    
     Serial.begin(115200);
     wifiMulti.addAP(WIFI_SSID, WIFI_PASS);
 
@@ -146,17 +68,13 @@ void setup(){
         delay(500);
         Serial.print('.');
     }
-    // while (wifiMulti.run() != WL_CONNECTED) { // Wait for the Wi-Fi to connect
-    //     delay(250);
-    //     Serial.print('.');
-    // }
-    
-
+  
     // while(!randomWarmup(200, 10, 200, 10));
-
-    setPixel(0, 0, 20, 20); 
-    // setStrip(160, 10, 160);
-    update();
+    // <WS2812, LED_PIN, GRB>
+    // LEDStripConfig strip1Config;
+    strip1.initStrip();
+    strip1.setPixel(0, 0, 20, 20); 
+    strip1.update();
 }
 
 bool warmup = false;
@@ -165,8 +83,8 @@ void loop(){
         ArduinoOTA.handle();
     }
     // twinkle(160, 10, 160, 20, 0, 20, 100);
-    leftshift(1);
-    update();
+    strip1.leftshift(1);
+    strip1.update();
     // Serial.println(randomWarmup(200, 10, 200, 10));
     delay(100);
 
