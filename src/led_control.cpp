@@ -12,8 +12,8 @@ LEDStrip::LEDStrip(int LEDCount, int minBrightness, int maxBrightness){
 
 int LEDStrip::initStrip(){
     FastLED.addLeds<WS2812B, 2, GRB>(_leds, _LEDCount).setCorrection(TypicalLEDStrip);
-    this->setStrip(0, 0, 0);
-    this->update();
+    setStrip(0, 0, 0);
+    update();
     return 1;
 }
 
@@ -71,10 +71,10 @@ bool LEDStrip::randomWarmup(byte r, byte g, byte b, byte dl){
       byte r_out = constrain(_leds[i].r + incr, _minBrightness, _maxBrightness);
       byte g_out = constrain(_leds[i].g + incr, _minBrightness, _maxBrightness);
       byte b_out = constrain(_leds[i].b + incr, _minBrightness, _maxBrightness);
-      this->setPixel(i, r_out, g_out, b_out);
+      setPixel(i, r_out, g_out, b_out);
     }
   }
-  this->update();
+  update();
   return done;
 }
 
@@ -87,7 +87,7 @@ void LEDStrip::twinkle(byte r, byte g, byte b, float dr, float dg, float db, flo
         byte r_out = constrain(r * (1 + dr_coef) * dl_out, _minBrightness, _maxBrightness);
         byte g_out = constrain(g * (1 + dg_coef) * dl_out, _minBrightness, _maxBrightness);
         byte b_out = constrain(b * (1 + db_coef) * dl_out, _minBrightness, _maxBrightness);
-        this->setPixel(i, r_out, g_out, b_out);
+        setPixel(i, r_out, g_out, b_out);
 
     }
 }
